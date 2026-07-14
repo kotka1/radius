@@ -1,0 +1,110 @@
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  perspective: 1200px;
+  perspective-origin: 50% 40%;
+  min-height: 280px;
+}
+
+.orbit {
+  transform-style: preserve-3d;
+  animation: radius-orbit 28s linear infinite;
+}
+
+.card {
+  position: relative;
+  transform-style: preserve-3d;
+  border-radius: 18px;
+  box-shadow:
+    0 40px 80px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(244, 244, 246, 0.06),
+    0 0 60px rgba(201, 165, 74, 0.08);
+  overflow: hidden;
+  backface-visibility: hidden;
+}
+
+.image {
+  display: block;
+  width: min(420px, 42vw);
+  height: auto;
+  border-radius: 18px;
+}
+
+.shine {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    115deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.12) 48%,
+    transparent 58%
+  );
+  background-size: 200% 100%;
+  animation: radius-shine 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.caption {
+  margin: 22px 0 0;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--radius-steel);
+  text-align: center;
+}
+
+@keyframes radius-orbit {
+  0% {
+    transform: rotateY(-14deg) rotateX(6deg) translateY(0);
+  }
+  25% {
+    transform: rotateY(0deg) rotateX(4deg) translateY(-6px);
+  }
+  50% {
+    transform: rotateY(14deg) rotateX(6deg) translateY(0);
+  }
+  75% {
+    transform: rotateY(0deg) rotateX(4deg) translateY(-6px);
+  }
+  100% {
+    transform: rotateY(-14deg) rotateX(6deg) translateY(0);
+  }
+}
+
+@keyframes radius-shine {
+  0%,
+  100% {
+    background-position: 120% 0;
+    opacity: 0.4;
+  }
+  50% {
+    background-position: -20% 0;
+    opacity: 0.85;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit,
+  .shine {
+    animation: none;
+  }
+
+  .orbit {
+    transform: rotateY(-8deg) rotateX(4deg);
+  }
+}
+
+@media (max-width: 960px) {
+  .stage {
+    margin-top: 48px;
+    min-height: 220px;
+  }
+
+  .image {
+    width: min(340px, 78vw);
+  }
+}

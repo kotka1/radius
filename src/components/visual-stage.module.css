@@ -1,0 +1,248 @@
+.stage {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: var(--radius-void);
+}
+
+.top {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--radius-line);
+  background: rgba(10, 10, 12, 0.92);
+  backdrop-filter: blur(10px);
+}
+
+.brandBtn {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.brandBtn img {
+  width: 120px;
+  height: auto;
+  display: block;
+}
+
+.prompt {
+  margin: 0;
+  color: var(--radius-fog);
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topActions {
+  display: flex;
+  gap: 14px;
+}
+
+.link {
+  color: var(--radius-gold-soft);
+  text-decoration: none;
+  font-size: 0.88rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) 1fr;
+  min-height: 0;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: 220px 1fr;
+  }
+}
+
+.feedPanel {
+  border-right: 1px solid var(--radius-line);
+  background: var(--radius-ink);
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.feedPanel h2 {
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--radius-gold);
+  font-weight: 600;
+}
+
+.feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.feed li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.92rem;
+  color: var(--radius-snow);
+  line-height: 1.4;
+}
+
+.role {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--radius-steel);
+}
+
+.critique {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--radius-line);
+  font-size: 0.85rem;
+  color: var(--radius-fog);
+}
+
+.critique ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.error {
+  color: var(--radius-danger);
+  font-size: 0.85rem;
+}
+
+.working {
+  color: var(--radius-gold-soft);
+  font-size: 0.85rem;
+  margin: 10px 0 0;
+}
+
+.previewPanel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #12141a;
+}
+
+.previewChrome {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--radius-line);
+}
+
+.previewChrome span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3a3a42;
+}
+
+.previewChrome span:nth-child(1) {
+  background: #c97868;
+}
+.previewChrome span:nth-child(2) {
+  background: #c9a54a;
+}
+.previewChrome span:nth-child(3) {
+  background: #6d9b78;
+}
+
+.previewChrome em {
+  margin-left: 10px;
+  font-style: normal;
+  font-size: 0.75rem;
+  color: var(--radius-fog);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.iframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background: #fff;
+  min-height: 55dvh;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px;
+  border-top: 1px solid var(--radius-line);
+  background: rgba(10, 10, 12, 0.95);
+}
+
+.actions button {
+  border: 1px solid var(--radius-line);
+  background: var(--radius-panel);
+  color: var(--radius-snow);
+  padding: 12px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  min-width: 96px;
+}
+
+.actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.actions .primary {
+  border: none;
+  background: linear-gradient(135deg, var(--radius-gold-soft), var(--radius-gold));
+  color: #15120a;
+  font-weight: 600;
+}
+
+.tweak {
+  position: fixed;
+  left: 50%;
+  bottom: 78px;
+  transform: translateX(-50%);
+  width: min(520px, calc(100vw - 24px));
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(16, 16, 20, 0.96);
+  border: 1px solid rgba(201, 165, 74, 0.35);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+
+.tweak input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--radius-snow);
+  outline: none;
+  padding: 8px 10px;
+}
+
+.tweak button {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: var(--radius-gold);
+  color: #15120a;
+  font-weight: 600;
+  cursor: pointer;
+}

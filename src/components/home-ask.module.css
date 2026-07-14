@@ -1,0 +1,135 @@
+.shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(24px, 6vw, 72px);
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(900px 480px at 18% 12%, rgba(201, 165, 74, 0.14), transparent 55%),
+    radial-gradient(700px 420px at 88% 78%, rgba(107, 122, 143, 0.16), transparent 50%),
+    linear-gradient(165deg, #070709 0%, #050505 48%, #0c0b08 100%);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 460px);
+  gap: clamp(32px, 6vw, 72px);
+  align-items: center;
+  width: min(1180px, 100%);
+  margin: 0 auto;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.glow {
+  position: absolute;
+  inset: auto -10% -20% 40%;
+  height: 50%;
+  background: radial-gradient(circle, rgba(201, 165, 74, 0.08), transparent 60%);
+  pointer-events: none;
+}
+
+.brand {
+  margin-bottom: clamp(28px, 5vh, 48px);
+}
+
+.logo {
+  width: min(280px, 72vw);
+  height: auto;
+}
+
+.headline {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2rem, 5.5vw, 3.4rem);
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  max-width: 14ch;
+  margin: 0 0 14px;
+}
+
+.sub {
+  margin: 0 0 32px;
+  max-width: 38ch;
+  color: var(--radius-fog);
+  font-size: 1.05rem;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.form {
+  width: min(640px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.input {
+  width: 100%;
+  resize: vertical;
+  min-height: 96px;
+  padding: 18px 20px;
+  border-radius: 16px;
+  border: 1px solid var(--radius-line);
+  background: rgba(16, 16, 20, 0.85);
+  color: var(--radius-snow);
+  outline: none;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.input:focus {
+  border-color: rgba(201, 165, 74, 0.55);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.attach {
+  position: relative;
+  color: var(--radius-fog);
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+.attach input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.attach span {
+  border-bottom: 1px solid rgba(200, 200, 208, 0.35);
+}
+
+.go {
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--radius-gold-soft), var(--radius-gold));
+  color: #15120a;
+  font-weight: 600;
+  padding: 12px 22px;
+  border-radius: 999px;
+}
+
+.go:hover {
+  filter: brightness(1.05);
+}

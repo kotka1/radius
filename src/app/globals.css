@@ -1,0 +1,45 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Syne:wght@500;600;700&display=swap");
+
+:root {
+  --radius-void: #050505;
+  --radius-ink: #0a0a0c;
+  --radius-panel: #101014;
+  --radius-line: rgba(244, 244, 246, 0.1);
+  --radius-gold: #c9a54a;
+  --radius-gold-soft: #e8d18a;
+  --radius-steel: #6b7a8f;
+  --radius-fog: #c8c8d0;
+  --radius-snow: #f4f4f6;
+  --radius-danger: #d86b6b;
+  --font-display: "Syne", sans-serif;
+  --font-body: "DM Sans", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--radius-void);
+  color: var(--radius-snow);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+textarea,
+input {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(201, 165, 74, 0.35);
+}
