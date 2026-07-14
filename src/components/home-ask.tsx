@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { ShowcaseCard } from "./showcase-card";
 import styles from "./home-ask.module.css";
 
 export type StagedAsset = {
@@ -40,34 +39,28 @@ export function HomeAsk({ onStart }: Props) {
   return (
     <main className={styles.shell}>
       <div className={styles.glow} aria-hidden />
-      <div className={styles.layout}>
-        <div className={styles.copy}>
-          <header className={styles.brand}>
-            <Image
-              src="/brand/radius-white.png"
-              alt="Radius"
-              width={280}
-              height={72}
-              priority
-              className={styles.logo}
-            />
-          </header>
+      <header className={styles.brand}>
+        <Image
+          src="/brand/radius-white.png"
+          alt="Radius"
+          width={280}
+          height={72}
+          priority
+          className={styles.logo}
+        />
+      </header>
 
-          <h1 className={styles.headline}>What website do you want?</h1>
-          <p className={styles.sub}>
-            Say it plainly. Watch agents build it live. Keep, undo, or tweak — nothing else to learn.
-          </p>
+      <h1 className={styles.headline}>What website do you want?</h1>
+      <p className={styles.sub}>
+        Say it plainly. Watch agents build it live. Keep, undo, or tweak — nothing else to learn.
+      </p>
 
-          <AskForm
-            onSubmit={async (prompt, files) => {
-              const assets = await Promise.all(files.map(fileToAsset));
-              onStart(prompt, assets);
-            }}
-          />
-        </div>
-
-        <ShowcaseCard />
-      </div>
+      <AskForm
+        onSubmit={async (prompt, files) => {
+          const assets = await Promise.all(files.map(fileToAsset));
+          onStart(prompt, assets);
+        }}
+      />
     </main>
   );
 }

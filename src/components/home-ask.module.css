@@ -12,28 +12,6 @@
     linear-gradient(165deg, #070709 0%, #050505 48%, #0c0b08 100%);
 }
 
-.layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 460px);
-  gap: clamp(32px, 6vw, 72px);
-  align-items: center;
-  width: min(1180px, 100%);
-  margin: 0 auto;
-}
-
-.copy {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 0;
-}
-
-@media (max-width: 960px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-}
-
 .glow {
   position: absolute;
   inset: auto -10% -20% 40%;
