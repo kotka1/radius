@@ -1,9 +1,37 @@
 export type AgentRole = "planner" | "builder" | "critic" | "system";
 
+export type CreationDomain =
+  | "website"
+  | "plan"
+  | "document"
+  | "visual"
+  | "cadConcept";
+
+export type RouterMode = "quality" | "speed" | "balanced";
+
+export type PlanArtifact = {
+  title: string;
+  summary: string;
+  steps: string[];
+  questions: string[];
+  risks: string[];
+  deliverables: string[];
+  domain: CreationDomain;
+  /** Full markdown body for the plan card / preview */
+  markdown: string;
+};
+
 export type AgentEvent =
   | { type: "status"; role: AgentRole; message: string }
-  | { type: "route"; label: string; mode: "quality" | "speed" | "balanced" }
+  | {
+      type: "route";
+      label: string;
+      mode: RouterMode;
+      domain: CreationDomain;
+    }
   | { type: "plan"; steps: string[] }
+  | { type: "planArtifact"; plan: PlanArtifact }
+  | { type: "awaitingApproval"; projectId: string }
   | { type: "html"; html: string; version: number }
   | { type: "critique"; notes: string[]; score: number }
   | { type: "done"; projectId: string; version: number }
@@ -28,6 +56,8 @@ export type ProjectVersion = {
   html: string;
   plan: string[];
   critique?: string[];
+  domain?: CreationDomain;
+  planArtifact?: PlanArtifact;
 };
 
 export type Project = {
@@ -40,6 +70,7 @@ export type Project = {
   versions: ProjectVersion[];
   /** Index into versions; current kept version */
   currentVersionIndex: number;
+  pendingPlan?: PlanArtifact;
 };
 
 export type GenerateRequest = {
@@ -49,6 +80,8 @@ export type GenerateRequest = {
   tweak?: string;
   /** Existing HTML to revise (undo target or current) */
   currentHtml?: string;
+  /** After planning: user approved — build deliverables */
+  approve?: boolean;
   assets?: Array<{
     name: string;
     mimeType: string;

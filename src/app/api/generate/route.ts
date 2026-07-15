@@ -27,6 +27,8 @@ export async function POST(req: NextRequest) {
   let projectId = body.projectId ? String(body.projectId) : undefined;
   const tweak = body.tweak ? String(body.tweak) : undefined;
   const currentHtml = body.currentHtml ? String(body.currentHtml) : undefined;
+  const approve = Boolean(body.approve);
+  const revisePlan = Boolean(body.revisePlan);
   const incoming = Array.isArray(body.assets) ? body.assets : [];
 
   const stream = new ReadableStream({
@@ -102,6 +104,8 @@ export async function POST(req: NextRequest) {
           projectId,
           tweak,
           currentHtml,
+          approve,
+          revisePlan,
           assets: [],
           emit,
         });

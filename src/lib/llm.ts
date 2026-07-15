@@ -1,5 +1,6 @@
 /**
- * Thin LLM client — OpenAI-compatible when OPENAI_API_KEY is set.
+ * Thin LLM client — OpenAI preferred; Anthropic fallback.
+ * Router can override model per role.
  */
 
 export function hasLiveLlm(): boolean {
@@ -88,26 +89,32 @@ export async function llmText(args: {
   system: string;
   user: string;
   json?: boolean;
+  /** Router-selected model override */
+  model?: string;
 }): Promise<string> {
   const planner = process.env.RADIUS_PLANNER_MODEL ?? "gpt-4o-mini";
   const builder = process.env.RADIUS_BUILDER_MODEL ?? "gpt-4o";
   const critic = process.env.RADIUS_CRITIC_MODEL ?? "gpt-4o-mini";
-  const model =
+  const fallback =
     args.role === "planner" ? planner : args.role === "builder" ? builder : critic;
+  const model = args.model ?? fallback;
 
   if (process.env.OPENAI_API_KEY) {
-    return openAiChat({ model, system: args.system, user: args.user, json: args.json });
+    return openAiChat({
+      model,
+      system: args.system,
+      user: args.user,
+      json: args.json,
+    });
   }
 
   if (process.env.ANTHROPIC_API_KEY) {
-    const claudeModel =
-      args.role === "builder" ? "claude-sonnet-4-20250514" : "claude-sonnet-4-20250514";
-    const raw = await anthropicChat({
+    const claudeModel = "claude-sonnet-4-20250514";
+    return anthropicChat({
       model: claudeModel,
       system: args.system,
       user: args.user,
     });
-    return raw;
   }
 
   throw new Error("No LLM API key configured");

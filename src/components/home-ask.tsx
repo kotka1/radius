@@ -85,10 +85,20 @@ function AskForm({
       <textarea
         name="prompt"
         className={styles.input}
-        placeholder="A calm landing page for a ceramic studio in Helsinki…"
+        placeholder="An aircraft concept package… a landing page… a launch plan…"
         rows={3}
         autoFocus
         required
+        onKeyDown={(e) => {
+          if (
+            e.key === "Enter" &&
+            !e.shiftKey &&
+            !e.nativeEvent.isComposing
+          ) {
+            e.preventDefault();
+            e.currentTarget.form?.requestSubmit();
+          }
+        }}
       />
       <div className={styles.row}>
         <label className={styles.attach}>

@@ -155,6 +155,8 @@ export async function addVersion(
     html: version.html,
     plan: version.plan,
     critique: version.critique,
+    domain: version.domain,
+    planArtifact: version.planArtifact,
   };
   project.versions.push(entry);
   project.currentVersionIndex = project.versions.length - 1;

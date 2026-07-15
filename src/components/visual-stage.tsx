@@ -31,6 +31,7 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
   const [tweakOpen, setTweakOpen] = useState(false);
   const [tweak, setTweak] = useState("");
   const [spiralLabel, setSpiralLabel] = useState("Thinking…");
+  const [awaitingApproval, setAwaitingApproval] = useState(false);
   const started = useRef(false);
   const feedEnd = useRef<HTMLDivElement>(null);
 
@@ -42,11 +43,18 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
   }, []);
 
   const runGenerate = useCallback(
-    async (opts?: { tweak?: string; currentHtml?: string; projectId?: string }) => {
+    async (opts?: {
+      tweak?: string;
+      currentHtml?: string;
+      projectId?: string;
+      approve?: boolean;
+      revisePlan?: boolean;
+    }) => {
       setBusy(true);
       setError(null);
       setCritique(null);
       setScore(null);
+      if (opts?.approve) setAwaitingApproval(false);
 
       const res = await fetch("/api/generate", {
         method: "POST",
@@ -56,7 +64,9 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
           projectId: opts?.projectId ?? projectId ?? undefined,
           tweak: opts?.tweak,
           currentHtml: opts?.currentHtml,
-          assets: opts?.tweak ? [] : assets,
+          approve: opts?.approve ?? false,
+          revisePlan: opts?.revisePlan ?? false,
+          assets: opts?.tweak || opts?.approve || opts?.revisePlan ? [] : assets,
         }),
       });
 
@@ -97,6 +107,11 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
           pushFeed(event.role, event.message);
         } else if (event.type === "plan") {
           pushFeed("planner", `Plan: ${event.steps.join(" → ")}`);
+        } else if (event.type === "planArtifact") {
+          pushFeed("planner", event.plan.title);
+        } else if (event.type === "awaitingApproval") {
+          setProjectId(event.projectId);
+          setAwaitingApproval(true);
         } else if (event.type === "html") {
           setHtml(event.html);
           if (event.version >= 1) {
@@ -111,7 +126,11 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
           pushFeed("critic", event.notes[0] ?? "Review complete");
         } else if (event.type === "done") {
           setProjectId(event.projectId);
-          pushFeed("system", "Ready — Keep it, undo, or tweak.");
+          if (!opts?.approve) {
+            /* awaitingApproval may already be set */
+          } else {
+            pushFeed("system", "Ready — Keep, undo, or tweak.");
+          }
         } else if (event.type === "error") {
           setError(event.message);
           pushFeed("system", event.message);
@@ -147,28 +166,39 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
   };
 
   const onKeep = async () => {
-    pushFeed("system", "Kept. Your site is saved — Share or Export anytime.");
-    // Version already persisted on generation; Keep is the affirmation + RL signal hook.
+    pushFeed("system", "Kept. Share or Export anytime.");
+  };
+
+  const onApprove = async () => {
+    pushFeed("system", "Approved — building deliverables…");
+    await runGenerate({
+      approve: true,
+      projectId: projectId ?? undefined,
+      currentHtml: html,
+    });
   };
 
   const onTweakSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = tweak.trim();
     if (!text || busy) return;
+    const wasAwaiting = awaitingApproval;
     setTweakOpen(false);
     setTweak("");
     pushFeed("system", `Tweak: ${text}`);
+    setAwaitingApproval(false);
     await runGenerate({
       tweak: text,
       currentHtml: html,
       projectId: projectId ?? undefined,
+      revisePlan: wasAwaiting,
     });
   };
 
   return (
     <div className={styles.stage}>
       <header className={styles.top}>
-        <button type="button" className={styles.brandBtn} onClick={onReset} title="New site">
+        <button type="button" className={styles.brandBtn} onClick={onReset} title="New creation">
           <Image src="/brand/radius-white.png" alt="Radius" width={140} height={36} />
         </button>
         <p className={styles.prompt} title={prompt}>
@@ -223,7 +253,7 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
             <span />
             <span />
             <span />
-            <em>Live preview</em>
+            <em>{awaitingApproval ? "Plan preview" : "Live preview"}</em>
           </div>
           <div className={styles.previewBody}>
             {busy && !html && (
@@ -242,20 +272,42 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
       </div>
 
       <footer className={styles.actions}>
-        <button type="button" disabled={!html || busy} onClick={() => void onKeep()}>
-          Keep
-        </button>
-        <button type="button" disabled={history.length < 2 || busy} onClick={onUndo}>
-          Undo
-        </button>
-        <button
-          type="button"
-          disabled={!html || busy}
-          className={styles.primary}
-          onClick={() => setTweakOpen((v) => !v)}
-        >
-          Tweak
-        </button>
+        {awaitingApproval ? (
+          <>
+            <button
+              type="button"
+              className={styles.primary}
+              disabled={busy || !projectId}
+              onClick={() => void onApprove()}
+            >
+              Approve &amp; build
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setTweakOpen((v) => !v)}
+            >
+              Revise plan
+            </button>
+          </>
+        ) : (
+          <>
+            <button type="button" disabled={!html || busy} onClick={() => void onKeep()}>
+              Keep
+            </button>
+            <button type="button" disabled={history.length < 2 || busy} onClick={onUndo}>
+              Undo
+            </button>
+            <button
+              type="button"
+              disabled={!html || busy}
+              className={styles.primary}
+              onClick={() => setTweakOpen((v) => !v)}
+            >
+              Tweak
+            </button>
+          </>
+        )}
       </footer>
 
       {tweakOpen && (
@@ -264,7 +316,17 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
             autoFocus
             value={tweak}
             onChange={(e) => setTweak(e.target.value)}
-            placeholder="Make the hero darker and shorter…"
+            placeholder={
+              awaitingApproval
+                ? "Add: 2 seats, ~10m wingspan, experimental…"
+                : "Make the hero darker and shorter…"
+            }
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                e.currentTarget.form?.requestSubmit();
+              }
+            }}
           />
           <button type="submit" disabled={!tweak.trim() || busy}>
             Apply
