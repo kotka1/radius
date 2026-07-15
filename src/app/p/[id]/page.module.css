@@ -54,3 +54,20 @@
   border: none;
   background: #fff;
 }
+
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 0;
+}
+
+.split .frame:first-child {
+  background: #0a0d12;
+}
+
+@media (max-width: 900px) {
+  .split {
+    grid-template-columns: 1fr;
+    grid-template-rows: 320px 1fr;
+  }
+}

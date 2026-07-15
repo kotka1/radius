@@ -45,7 +45,7 @@ Copy `.env.example` to `.env.local`:
 - **Client:** Next.js App Router — home ask → Visual Stage (agent feed + live iframe preview)
 - **Agents:** `/api/generate` SSE — planner → builder → critic; speculative-style full HTML apply to preview
 - **Context:** optional uploads (logo / brief / images) with priority packing into the prompt budget
-- **Persist:** filesystem JSON projects under `data/projects/`, share at `/p/[id]`, export ZIP at `/api/projects/[id]/export`
+- **Persist:** local `data/projects/` in development; on Vercel uses memory + `/tmp` (demo-durable within warm instances; Share may not survive cold starts until we add a real DB/Blob)
 
 ## Product principles
 

@@ -82,6 +82,12 @@
   font-weight: 600;
 }
 
+.spiralSlot {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--radius-line);
+}
+
 .feed {
   list-style: none;
   margin: 0;
@@ -127,11 +133,6 @@
   font-size: 0.85rem;
 }
 
-.working {
-  color: var(--radius-gold-soft);
-  font-size: 0.85rem;
-  margin: 10px 0 0;
-}
 
 .previewPanel {
   display: flex;
@@ -144,34 +145,212 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--radius-line);
 }
 
-.previewChrome span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #3a3a42;
+.tabs {
+  display: flex;
+  gap: 4px;
 }
 
-.previewChrome span:nth-child(1) {
-  background: #c97868;
-}
-.previewChrome span:nth-child(2) {
-  background: #c9a54a;
-}
-.previewChrome span:nth-child(3) {
-  background: #6d9b78;
-}
-
-.previewChrome em {
-  margin-left: 10px;
-  font-style: normal;
-  font-size: 0.75rem;
+.tab {
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--radius-fog);
-  letter-spacing: 0.08em;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+  cursor: pointer;
+}
+
+.tab:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.tabActive {
+  color: var(--radius-snow);
+  border-color: var(--radius-line);
+  background: var(--radius-panel);
+}
+
+.previewBody {
+  position: relative;
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: auto;
+}
+
+.emptyHint {
+  margin: auto;
+  padding: 40px;
+  text-align: center;
+  color: var(--radius-fog);
+  font-size: 0.95rem;
+}
+
+/* Plan card */
+.planCard {
+  flex: 1;
+  overflow: auto;
+  padding: clamp(20px, 4vw, 40px);
+  color: var(--radius-snow);
+  max-width: 760px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.planKicker {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--radius-gold);
+}
+
+.planCard h3 {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  margin: 8px 0 10px;
+  line-height: 1.1;
+}
+
+.planSummary {
+  color: var(--radius-fog);
+  margin: 0 0 20px;
+  line-height: 1.55;
+}
+
+.section {
+  margin: 18px 0;
+}
+
+.sectionTitle {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--radius-steel);
+  margin-bottom: 8px;
+}
+
+.section ul,
+.section ol {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--radius-snow);
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.safetyNote {
+  margin-top: 24px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(201, 165, 74, 0.35);
+  background: rgba(201, 165, 74, 0.08);
+  color: var(--radius-fog);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+/* Aircraft concept view */
+.aircraft {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  min-height: 0;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .aircraft {
+    grid-template-columns: 1fr;
+    grid-template-rows: 260px 1fr;
+  }
+}
+
+.aircraftPreview {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  border-right: 1px solid var(--radius-line);
+}
+
+.aircraftDetails {
+  overflow: auto;
+  padding: clamp(18px, 3vw, 32px);
+  color: var(--radius-snow);
+}
+
+.aircraftDetails h3 {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  margin: 0 0 8px;
+}
+
+/* Files view */
+.files {
+  flex: 1;
+  overflow: auto;
+  padding: clamp(20px, 4vw, 40px);
+  color: var(--radius-snow);
+  max-width: 620px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.files h3 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  margin: 0 0 8px;
+}
+
+.files ul {
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.files code {
+  background: var(--radius-panel);
+  border: 1px solid var(--radius-line);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  color: var(--radius-fog);
+}
+
+.downloadBtn {
+  display: inline-block;
+  text-decoration: none;
+  background: linear-gradient(135deg, var(--radius-gold-soft), var(--radius-gold));
+  color: #15120a;
+  font-weight: 600;
+  padding: 12px 22px;
+  border-radius: 999px;
+}
+
+.previewWaiting {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(7, 7, 9, 0.92) 0%,
+    rgba(5, 5, 5, 0.98) 70%
+  );
 }
 
 .iframe {
