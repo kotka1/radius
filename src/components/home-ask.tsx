@@ -50,7 +50,7 @@ export function HomeAsk({ onStart }: Props) {
         />
       </header>
 
-      <h1 className={styles.headline}>What website do you want?</h1>
+      <h1 className={styles.headline}>What do you want to create?</h1>
       <p className={styles.sub}>
         Say it plainly. Watch agents build it live. Keep, undo, or tweak — nothing else to learn.
       </p>
