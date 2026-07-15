@@ -3,47 +3,114 @@ import path from "path";
 import { v4 as uuid } from "uuid";
 import type { Project, ProjectAsset, ProjectVersion } from "./types";
 
-const ROOT = path.join(process.cwd(), "data");
-const PROJECTS = path.join(ROOT, "projects");
-const UPLOADS = path.join(ROOT, "uploads");
+/**
+ * Vercel/serverless: /var/task is read-only (EROFS).
+ * Use /tmp + in-memory store so Generate works in production demos.
+ * Local: still writes under ./data for durable shares.
+ */
+
+type Store = {
+  projects: Map<string, Project>;
+  uploads: Map<string, Buffer>;
+};
+
+function getStore(): Store {
+  const g = globalThis as typeof globalThis & { __radiusStore?: Store };
+  if (!g.__radiusStore) {
+    g.__radiusStore = {
+      projects: new Map(),
+      uploads: new Map(),
+    };
+  }
+  return g.__radiusStore;
+}
+
+function isServerless(): boolean {
+  return Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+}
+
+function dataRoot(): string {
+  if (isServerless()) {
+    return path.join("/tmp", "radius-data");
+  }
+  return path.join(process.cwd(), "data");
+}
+
+function projectsDir(): string {
+  return path.join(dataRoot(), "projects");
+}
+
+function uploadsDir(): string {
+  return path.join(dataRoot(), "uploads");
+}
 
 async function ensureDirs() {
-  await fs.mkdir(PROJECTS, { recursive: true });
-  await fs.mkdir(UPLOADS, { recursive: true });
+  await fs.mkdir(projectsDir(), { recursive: true });
+  await fs.mkdir(uploadsDir(), { recursive: true });
 }
 
 function projectPath(id: string) {
-  return path.join(PROJECTS, `${id}.json`);
+  return path.join(projectsDir(), `${id}.json`);
+}
+
+async function writeProjectDisk(project: Project): Promise<void> {
+  try {
+    await ensureDirs();
+    await fs.writeFile(projectPath(project.id), JSON.stringify(project, null, 2));
+  } catch (err) {
+    // Serverless /tmp full or unexpected FS error — memory still holds the project
+    if (!isServerless()) throw err;
+  }
 }
 
 export async function listProjects(): Promise<Project[]> {
-  await ensureDirs();
-  const files = await fs.readdir(PROJECTS);
-  const projects: Project[] = [];
-  for (const file of files) {
-    if (!file.endsWith(".json")) continue;
-    const raw = await fs.readFile(path.join(PROJECTS, file), "utf8");
-    projects.push(JSON.parse(raw) as Project);
+  const store = getStore();
+  const fromMemory = [...store.projects.values()];
+
+  try {
+    await ensureDirs();
+    const files = await fs.readdir(projectsDir());
+    for (const file of files) {
+      if (!file.endsWith(".json")) continue;
+      const id = file.replace(/\.json$/, "");
+      if (store.projects.has(id)) continue;
+      try {
+        const raw = await fs.readFile(path.join(projectsDir(), file), "utf8");
+        const project = JSON.parse(raw) as Project;
+        store.projects.set(project.id, project);
+        fromMemory.push(project);
+      } catch {
+        /* skip corrupt */
+      }
+    }
+  } catch {
+    /* no disk */
   }
-  return projects.sort(
+
+  return [...store.projects.values()].sort(
     (a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt)
   );
 }
 
 export async function getProject(id: string): Promise<Project | null> {
-  await ensureDirs();
+  const store = getStore();
+  const cached = store.projects.get(id);
+  if (cached) return cached;
+
   try {
     const raw = await fs.readFile(projectPath(id), "utf8");
-    return JSON.parse(raw) as Project;
+    const project = JSON.parse(raw) as Project;
+    store.projects.set(project.id, project);
+    return project;
   } catch {
     return null;
   }
 }
 
 export async function saveProject(project: Project): Promise<Project> {
-  await ensureDirs();
   project.updatedAt = new Date().toISOString();
-  await fs.writeFile(projectPath(project.id), JSON.stringify(project, null, 2));
+  getStore().projects.set(project.id, project);
+  await writeProjectDisk(project);
   return project;
 }
 
@@ -116,13 +183,21 @@ export async function saveUpload(args: {
   priority: number;
   textExcerpt?: string;
 }): Promise<ProjectAsset> {
-  await ensureDirs();
   const id = uuid();
   const safe = args.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const rel = path.join(args.projectId, `${id}-${safe}`);
-  const abs = path.join(UPLOADS, rel);
-  await fs.mkdir(path.dirname(abs), { recursive: true });
-  await fs.writeFile(abs, args.buffer);
+  const store = getStore();
+  store.uploads.set(rel, args.buffer);
+
+  try {
+    await ensureDirs();
+    const abs = path.join(uploadsDir(), rel);
+    await fs.mkdir(path.dirname(abs), { recursive: true });
+    await fs.writeFile(abs, args.buffer);
+  } catch (err) {
+    if (!isServerless()) throw err;
+  }
+
   return {
     id,
     name: args.name,
@@ -136,9 +211,11 @@ export async function saveUpload(args: {
 }
 
 export function uploadAbsPath(relative: string) {
-  return path.join(UPLOADS, relative);
+  return path.join(uploadsDir(), relative);
 }
 
 export async function readUpload(relative: string): Promise<Buffer> {
+  const mem = getStore().uploads.get(relative);
+  if (mem) return mem;
   return fs.readFile(uploadAbsPath(relative));
 }
