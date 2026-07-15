@@ -28,7 +28,10 @@ export async function POST(req: NextRequest) {
   const tweak = body.tweak ? String(body.tweak) : undefined;
   const currentHtml = body.currentHtml ? String(body.currentHtml) : undefined;
   const approve = Boolean(body.approve);
-  const revisePlan = Boolean(body.revisePlan);
+  // Approve → build the deliverable; anything else (including revise) → (re)plan.
+  const action: "plan" | "build" = approve ? "build" : "plan";
+  const plan =
+    body.plan && typeof body.plan === "object" ? body.plan : undefined;
   const incoming = Array.isArray(body.assets) ? body.assets : [];
 
   const stream = new ReadableStream({
@@ -102,10 +105,10 @@ export async function POST(req: NextRequest) {
         await runOrchestrator({
           prompt,
           projectId,
+          action,
+          plan,
           tweak,
           currentHtml,
-          approve,
-          revisePlan,
           assets: [],
           emit,
         });

@@ -106,7 +106,7 @@ function AskForm({
           <span>Add logo, photo, or brief</span>
         </label>
         <button type="submit" className={styles.go}>
-          Build it
+          Create
         </button>
       </div>
     </form>
