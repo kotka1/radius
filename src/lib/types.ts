@@ -2,6 +2,7 @@ export type AgentRole = "planner" | "builder" | "critic" | "system";
 
 export type AgentEvent =
   | { type: "status"; role: AgentRole; message: string }
+  | { type: "route"; label: string; mode: "quality" | "speed" | "balanced" }
   | { type: "plan"; steps: string[] }
   | { type: "html"; html: string; version: number }
   | { type: "critique"; notes: string[]; score: number }

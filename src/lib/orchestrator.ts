@@ -2,6 +2,7 @@ import { buildPromptContext } from "./context";
 import { hasLiveLlm, llmText } from "./llm";
 import { mockCritique, mockHtml, mockPlan } from "./mock-generate";
 import { addVersion, createProject, getProject, saveProject } from "./persist";
+import { routeTask } from "./router";
 import type { AgentEvent, Project, ProjectAsset } from "./types";
 
 function sleep(ms: number) {
@@ -111,6 +112,14 @@ export async function runOrchestrator(args: RunArgs): Promise<{
     assets: project.assets,
     budgetTokens: 7000,
   });
+
+  const route = routeTask({
+    prompt: args.prompt,
+    tweak: args.tweak,
+    assetCount: project.assets.length,
+  });
+
+  emit({ type: "route", label: route.spiralLabel, mode: route.mode });
 
   const live = hasLiveLlm();
 

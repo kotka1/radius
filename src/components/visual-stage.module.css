@@ -82,6 +82,12 @@
   font-weight: 600;
 }
 
+.spiralSlot {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--radius-line);
+}
+
 .feed {
   list-style: none;
   margin: 0;
@@ -127,11 +133,6 @@
   font-size: 0.85rem;
 }
 
-.working {
-  color: var(--radius-gold-soft);
-  font-size: 0.85rem;
-  margin: 10px 0 0;
-}
 
 .previewPanel {
   display: flex;
@@ -172,6 +173,27 @@
   color: var(--radius-fog);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.previewBody {
+  position: relative;
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.previewWaiting {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(7, 7, 9, 0.92) 0%,
+    rgba(5, 5, 5, 0.98) 70%
+  );
 }
 
 .iframe {

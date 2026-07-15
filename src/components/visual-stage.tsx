@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AgentEvent } from "@/lib/types";
 import type { StagedAsset } from "./home-ask";
+import { RadiusSpiralSpinner } from "./radius-spiral-spinner";
 import styles from "./visual-stage.module.css";
 
 type FeedItem = {
@@ -29,6 +30,7 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [tweakOpen, setTweakOpen] = useState(false);
   const [tweak, setTweak] = useState("");
+  const [spiralLabel, setSpiralLabel] = useState("Thinking…");
   const started = useRef(false);
   const feedEnd = useRef<HTMLDivElement>(null);
 
@@ -89,7 +91,9 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
       setBusy(false);
 
       function handleEvent(event: AgentEvent) {
-        if (event.type === "status") {
+        if (event.type === "route") {
+          setSpiralLabel(event.label);
+        } else if (event.type === "status") {
           pushFeed(event.role, event.message);
         } else if (event.type === "plan") {
           pushFeed("planner", `Plan: ${event.steps.join(" → ")}`);
@@ -187,6 +191,11 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
       <div className={styles.grid}>
         <aside className={styles.feedPanel}>
           <h2>Agents</h2>
+          {busy && (
+            <div className={styles.spiralSlot}>
+              <RadiusSpiralSpinner label={spiralLabel} size="sm" />
+            </div>
+          )}
           <ul className={styles.feed}>
             {feed.map((item) => (
               <li key={item.id}>
@@ -207,7 +216,6 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
             </div>
           )}
           {error && <p className={styles.error}>{error}</p>}
-          {busy && <p className={styles.working}>Working…</p>}
         </aside>
 
         <section className={styles.previewPanel}>
@@ -217,12 +225,19 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
             <span />
             <em>Live preview</em>
           </div>
-          <iframe
-            title="Live preview"
-            className={styles.iframe}
-            src={previewSrc}
-            sandbox="allow-scripts allow-same-origin"
-          />
+          <div className={styles.previewBody}>
+            {busy && !html && (
+              <div className={styles.previewWaiting}>
+                <RadiusSpiralSpinner label={spiralLabel} size="lg" />
+              </div>
+            )}
+            <iframe
+              title="Live preview"
+              className={styles.iframe}
+              src={previewSrc}
+              sandbox="allow-scripts allow-same-origin"
+            />
+          </div>
         </section>
       </div>
 
