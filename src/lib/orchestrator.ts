@@ -9,7 +9,7 @@ import {
 import { buildPromptContext } from "./context";
 import { hasLiveLlm, llmText } from "./llm";
 import { mockCritique, mockHtml } from "./mock-generate";
-import { addVersion, createProject, getProject, saveProject } from "./persist";
+import { addVersion, createProject, ensureProject, saveProject } from "./persist";
 import { routeTask, type RouteDecision } from "./router";
 import type {
   AgentEvent,
@@ -141,18 +141,18 @@ Geometry values are approximate metres. Do NOT claim certification or airworthin
 
 /* ------------------------------ PROJECT -------------------------------- */
 
-async function resolveProject(
-  args: RunArgs
-): Promise<Project> {
+async function resolveProject(args: RunArgs): Promise<Project> {
   const assets = args.assets ?? [];
   if (args.projectId) {
-    const existing = await getProject(args.projectId);
-    if (!existing) throw new Error("Project not found");
-    if (assets.length) {
-      existing.assets = [...existing.assets, ...assets];
-      return saveProject(existing);
-    }
-    return existing;
+    // Rehydrate from client snapshot when memory/`/tmp` was wiped on Vercel.
+    return ensureProject({
+      id: args.projectId,
+      prompt: args.prompt,
+      pendingPlan: args.plan,
+      artifact: args.artifact,
+      html: args.currentHtml,
+      assets,
+    });
   }
   return createProject({ prompt: args.prompt, assets });
 }
@@ -162,6 +162,8 @@ export type RunArgs = {
   projectId?: string;
   action?: "plan" | "build";
   plan?: PlanArtifact;
+  /** Latest artifact from the client — seeds versions on cold-start rehydrate. */
+  artifact?: CreationArtifact;
   tweak?: string;
   currentHtml?: string;
   assets?: ProjectAsset[];

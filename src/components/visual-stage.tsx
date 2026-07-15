@@ -61,6 +61,7 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
   const [tab, setTab] = useState<Tab>("plan");
   const started = useRef(false);
   const planRef = useRef<PlanArtifact | null>(null);
+  const artifactRef = useRef<CreationArtifact | null>(null);
   const feedEnd = useRef<HTMLDivElement>(null);
 
   const pushFeed = useCallback((role: string, message: string) => {
@@ -77,12 +78,18 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
       projectId?: string;
       approve?: boolean;
       plan?: PlanArtifact | null;
+      artifact?: CreationArtifact | null;
     }) => {
       setBusy(true);
       setError(null);
       setCritique(null);
       setScore(null);
       if (opts?.approve) setAwaitingApproval(false);
+
+      const planPayload =
+        opts?.plan ?? planRef.current ?? undefined;
+      const artifactPayload =
+        opts?.artifact ?? artifactRef.current ?? undefined;
 
       const res = await fetch("/api/generate", {
         method: "POST",
@@ -93,7 +100,10 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
           tweak: opts?.tweak,
           currentHtml: opts?.currentHtml,
           approve: opts?.approve ?? false,
-          plan: opts?.approve ? opts?.plan ?? planRef.current ?? undefined : undefined,
+          // Always send plan/artifact so the server can rehydrate after
+          // serverless cold starts (memory + /tmp do not survive).
+          plan: planPayload ?? undefined,
+          artifact: artifactPayload ?? undefined,
           assets: opts?.tweak || opts?.approve ? [] : assets,
         }),
       });
@@ -153,6 +163,7 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
           }
         } else if (event.type === "artifact") {
           setArtifact(event.artifact);
+          artifactRef.current = event.artifact;
           setTab("preview");
         } else if (event.type === "critique") {
           setCritique(event.notes);
@@ -225,6 +236,7 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
       projectId: projectId ?? undefined,
       currentHtml: html,
       plan: planRef.current,
+      artifact: artifactRef.current,
     });
   };
 
@@ -237,10 +249,13 @@ export function VisualStage({ prompt, assets, onReset }: Props) {
     pushFeed("system", `Revise: ${text}`);
     setAwaitingApproval(false);
     // Revising re-runs the plan phase with the note (works pre- or post-build).
+    // Plan + artifact are sent so the server can rehydrate after cold starts.
     await runGenerate({
       tweak: text,
       currentHtml: html,
       projectId: projectId ?? undefined,
+      plan: planRef.current,
+      artifact: artifactRef.current,
     });
   };
 

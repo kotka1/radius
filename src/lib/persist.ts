@@ -1,7 +1,13 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { v4 as uuid } from "uuid";
-import type { Project, ProjectAsset, ProjectVersion } from "./types";
+import type {
+  CreationArtifact,
+  PlanArtifact,
+  Project,
+  ProjectAsset,
+  ProjectVersion,
+} from "./types";
 
 /**
  * Vercel/serverless: /var/task is read-only (EROFS).
@@ -118,10 +124,12 @@ export async function createProject(args: {
   prompt: string;
   title?: string;
   assets?: ProjectAsset[];
+  /** When set, reuse this id (client rehydrate after cold start). */
+  id?: string;
 }): Promise<Project> {
   const now = new Date().toISOString();
   const project: Project = {
-    id: uuid(),
+    id: args.id ?? uuid(),
     title: args.title ?? deriveTitle(args.prompt),
     createdAt: now,
     updatedAt: now,
@@ -130,6 +138,66 @@ export async function createProject(args: {
     versions: [],
     currentVersionIndex: -1,
   };
+  return saveProject(project);
+}
+
+/**
+ * Get a project by id, or recreate it from a client snapshot when the
+ * serverless memory/`/tmp` store was wiped (cold start / new instance).
+ */
+export async function ensureProject(args: {
+  id: string;
+  prompt: string;
+  pendingPlan?: PlanArtifact;
+  artifact?: CreationArtifact;
+  html?: string;
+  assets?: ProjectAsset[];
+}): Promise<Project> {
+  const existing = await getProject(args.id);
+  if (existing) {
+    let dirty = false;
+    if (args.pendingPlan && !existing.pendingPlan) {
+      existing.pendingPlan = args.pendingPlan;
+      dirty = true;
+    }
+    if (args.assets?.length) {
+      existing.assets = [...existing.assets, ...args.assets];
+      dirty = true;
+    }
+    return dirty ? saveProject(existing) : existing;
+  }
+
+  const now = new Date().toISOString();
+  const project: Project = {
+    id: args.id,
+    title: deriveTitle(args.prompt),
+    createdAt: now,
+    updatedAt: now,
+    prompt: args.prompt,
+    assets: args.assets ?? [],
+    versions: [],
+    currentVersionIndex: -1,
+    pendingPlan: args.pendingPlan,
+  };
+
+  if (args.artifact || args.html) {
+    const planSteps = args.pendingPlan?.steps ?? ["Restored from client after cold start"];
+    const entry: ProjectVersion = {
+      id: uuid(),
+      createdAt: now,
+      prompt: args.prompt,
+      html:
+        args.html ??
+        (args.artifact?.kind === "website" ? args.artifact.html : undefined),
+      plan: planSteps,
+      planArtifact: args.pendingPlan,
+      artifact: args.artifact,
+      domain: args.pendingPlan?.domain,
+    };
+    project.versions.push(entry);
+    project.currentVersionIndex = 0;
+  }
+
   return saveProject(project);
 }
 

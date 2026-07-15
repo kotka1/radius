@@ -169,8 +169,16 @@ export type GenerateRequest = {
   projectId?: string;
   /** Which phase to run: plan first, then build after approval. */
   action?: "plan" | "build";
-  /** Approved plan passed back on build (survives cold starts). */
+  /**
+   * Plan passed back from the client so plan/build/tweak survive
+   * serverless cold starts (in-memory + /tmp store may be empty).
+   */
   plan?: PlanArtifact;
+  /**
+   * Latest built artifact from the client — used to rehydrate the
+   * project when the server store was wiped between requests.
+   */
+  artifact?: CreationArtifact;
   /** Tweak instruction for revising the current deliverable */
   tweak?: string;
   /** Existing HTML to revise (undo target or current) */

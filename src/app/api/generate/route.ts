@@ -4,8 +4,8 @@ import {
   inferAssetKind,
 } from "@/lib/context";
 import { runOrchestrator } from "@/lib/orchestrator";
-import { createProject, saveProject, saveUpload } from "@/lib/persist";
-import type { AgentEvent, ProjectAsset } from "@/lib/types";
+import { createProject, ensureProject, saveUpload } from "@/lib/persist";
+import type { AgentEvent, CreationArtifact, PlanArtifact, ProjectAsset } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,7 +31,13 @@ export async function POST(req: NextRequest) {
   // Approve → build the deliverable; anything else (including revise) → (re)plan.
   const action: "plan" | "build" = approve ? "build" : "plan";
   const plan =
-    body.plan && typeof body.plan === "object" ? body.plan : undefined;
+    body.plan && typeof body.plan === "object"
+      ? (body.plan as PlanArtifact)
+      : undefined;
+  const artifact =
+    body.artifact && typeof body.artifact === "object"
+      ? (body.artifact as CreationArtifact)
+      : undefined;
   const incoming = Array.isArray(body.assets) ? body.assets : [];
 
   const stream = new ReadableStream({
@@ -45,6 +51,15 @@ export async function POST(req: NextRequest) {
         if (!projectId) {
           const created = await createProject({ prompt, assets: [] });
           projectId = created.id;
+        } else {
+          // Ensure the project exists before uploads (cold start / new instance).
+          await ensureProject({
+            id: projectId,
+            prompt,
+            pendingPlan: plan,
+            artifact,
+            html: currentHtml,
+          });
         }
 
         const assets: ProjectAsset[] = [];
@@ -93,23 +108,15 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        if (assets.length) {
-          const { getProject } = await import("@/lib/persist");
-          const project = await getProject(projectId!);
-          if (project) {
-            project.assets = [...project.assets, ...assets];
-            await saveProject(project);
-          }
-        }
-
         await runOrchestrator({
           prompt,
           projectId,
           action,
           plan,
+          artifact,
           tweak,
           currentHtml,
-          assets: [],
+          assets,
           emit,
         });
       } catch (err) {
