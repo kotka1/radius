@@ -6,7 +6,9 @@ export const metadata: Metadata = {
   description:
     "Radius is the easiest way to use the world’s best AIs. Describe a website, watch agents build it live, then Keep, Undo, or Tweak.",
   icons: {
-    icon: "/brand/radius-white.png",
+    icon: [{ url: "/favicon.png", type: "image/png" }],
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
   },
 };
 
