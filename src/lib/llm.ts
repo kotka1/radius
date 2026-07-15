@@ -98,6 +98,12 @@ export async function llmText(args: {
   const fallback =
     args.role === "planner" ? planner : args.role === "builder" ? builder : critic;
   const model = args.model ?? fallback;
+  const isClaude = /^claude/i.test(model);
+
+  // Honor the provider implied by the router-selected model when we can.
+  if (isClaude && process.env.ANTHROPIC_API_KEY) {
+    return anthropicChat({ model, system: args.system, user: args.user });
+  }
 
   if (process.env.OPENAI_API_KEY) {
     return openAiChat({
@@ -109,7 +115,7 @@ export async function llmText(args: {
   }
 
   if (process.env.ANTHROPIC_API_KEY) {
-    const claudeModel = "claude-sonnet-4-20250514";
+    const claudeModel = isClaude ? model : "claude-sonnet-4-20250514";
     return anthropicChat({
       model: claudeModel,
       system: args.system,

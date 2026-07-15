@@ -1,6 +1,8 @@
 /**
- * Radius Router — invisible model + domain selection for everyday users.
- * UI shows the Spiral and plain English — never model names.
+ * Radius Router v2 — invisible model + creation-domain selection.
+ * Classifies intent into a creation domain, picks quality/speed/balance,
+ * and returns the concrete model IDs the orchestrator passes into LLM calls.
+ * The UI shows the Spiral copy, never model names.
  */
 
 import type { CreationDomain, RouterMode } from "./types";
@@ -13,13 +15,15 @@ export type RouteDecision = {
   criticModel: string;
   /** Plain-English label for the Spiral Spinner */
   spiralLabel: string;
-  /** Require plan approval before building */
-  planFirst: boolean;
+  /** Human label for the domain (feed only, still no model names) */
+  domainLabel: string;
+  /** Regulated work (aircraft/CAD) that needs a non-certification note */
+  requiresSafetyNote: boolean;
 };
 
-const OPENAI = {
+const DEFAULTS = {
   quality: {
-    planner: process.env.RADIUS_PLANNER_MODEL ?? "gpt-4o",
+    planner: process.env.RADIUS_PLANNER_MODEL ?? "gpt-4o-mini",
     builder: process.env.RADIUS_BUILDER_MODEL ?? "gpt-4o",
     critic: process.env.RADIUS_CRITIC_MODEL ?? "gpt-4o-mini",
   },
@@ -33,105 +37,73 @@ const OPENAI = {
     builder: process.env.RADIUS_BUILDER_MODEL ?? "gpt-4o",
     critic: process.env.RADIUS_CRITIC_MODEL ?? "gpt-4o-mini",
   },
+} as const;
+
+const DOMAIN_LABEL: Record<CreationDomain, string> = {
+  website: "Website",
+  plan: "Plan",
+  document: "Document",
+  visualConcept: "Visual concept",
+  cadConcept: "CAD concept",
 };
 
-function detectDomain(prompt: string): CreationDomain {
+const SPIRAL_BY_DOMAIN: Record<CreationDomain, string> = {
+  website: "Planning the build…",
+  plan: "Choosing the best path…",
+  document: "Shaping the document…",
+  visualConcept: "Sketching the concept…",
+  cadConcept: "Preparing the CAD concept…",
+};
+
+const CAD_RE =
+  /\b(aircraft|airplane|aeroplane|plane|jet|glider|drone|uav|rocket|aerospace|fuselage|wing(?:span)?|airfoil|cad|cam|step file|stl|solidworks|fusion\s*360|3d\s*model|3d\s*print|mechanical part|machined?|manufactur\w*|tolerance|engineering drawing|assembly|bracket|chassis|enclosure|gearbox|turbine|propeller)\b/i;
+const WEBSITE_RE =
+  /\b(website|web\s*site|landing page|web page|webpage|homepage|home page|storefront|portfolio site|marketing site|app page|one[-\s]?pager|microsite)\b/i;
+const DOCUMENT_RE =
+  /\b(document|essay|report|white\s*paper|whitepaper|memo|letter|cover letter|resume|cv|proposal|contract|spec sheet|blog post|article|press release|readme|user guide|manual)\b/i;
+const PLAN_RE =
+  /\b(plan|strategy|roadmap|research|analysis|business plan|go[-\s]?to[-\s]?market|gtm|launch plan|checklist|framework|outline|study)\b/i;
+const VISUAL_RE =
+  /\b(logo|moodboard|mood board|brand identity|color palette|colour palette|poster|illustration|concept art|visual concept|style guide)\b/i;
+
+export function classifyDomain(prompt: string): CreationDomain {
   const p = prompt.toLowerCase();
-
-  if (
-    /\b(aeroplane|airplane|aircraft|plane|cad|3d\s*model|step\s*file|stl|solidworks|fusion\s*360|cnc|machin|blueprint|schematic|fuselage|wing\s*span|parts?\s*list|engineering\s*drawing|outsourcing)\b/i.test(
-      p
-    )
-  ) {
-    return "cadConcept";
-  }
-
-  if (
-    /\b(website|landing\s*page|web\s*page|homepage|site\s*for|portfolio\s*site|storefront)\b/i.test(
-      p
-    )
-  ) {
-    return "website";
-  }
-
-  if (
-    /\b(logo|poster|brand\s*visual|moodboard|image|illustration|hero\s*visual)\b/i.test(
-      p
-    )
-  ) {
-    return "visual";
-  }
-
-  if (
-    /\b(document|proposal|brief|report|spec|whitepaper|pdf)\b/i.test(p)
-  ) {
-    return "document";
-  }
-
-  if (
-    /\b(plan|strategy|roadmap|research|how\s*(do|can|should)\s*i|help\s*me\s*(think|plan))\b/i.test(
-      p
-    )
-  ) {
-    return "plan";
-  }
-
-  // Short vague prompts like "an aeroplane" already caught; default to plan-first general
-  if (p.split(/\s+/).length <= 6) return "plan";
-
+  // High-stakes / technical wins first so "plane website" still gets safety framing.
+  if (CAD_RE.test(p)) return "cadConcept";
+  if (WEBSITE_RE.test(p)) return "website";
+  if (VISUAL_RE.test(p)) return "visualConcept";
+  if (DOCUMENT_RE.test(p)) return "document";
+  if (PLAN_RE.test(p)) return "plan";
+  // Ambiguous everyday asks default to a website (v1 core deliverable).
   return "website";
-}
-
-function spiralFor(domain: CreationDomain, mode: RouterMode): string {
-  if (domain === "cadConcept") {
-    return mode === "speed"
-      ? "Refining the technical plan…"
-      : "Planning the CAD concept…";
-  }
-  if (domain === "plan") return "Thinking it through…";
-  if (domain === "document") return "Structuring the document…";
-  if (domain === "visual") return "Shaping the visual concept…";
-  if (mode === "speed") return "Refining quickly…";
-  if (mode === "quality") return "Choosing the best path…";
-  return "Thinking it through…";
 }
 
 export function routeTask(intent: {
   prompt: string;
   tweak?: string;
   assetCount?: number;
-  approve?: boolean;
-  /** User is revising the plan — stay in plan-first, don't build yet */
-  revisePlan?: boolean;
+  /** Domain from an already-approved plan, so build matches plan. */
+  domain?: CreationDomain;
 }): RouteDecision {
-  const domain = detectDomain(intent.prompt);
   const hasTweak = Boolean(intent.tweak?.trim());
   const isRichBrief =
     intent.prompt.length > 120 || (intent.assetCount ?? 0) > 0;
 
+  const domain = intent.domain ?? classifyDomain(intent.prompt);
+
   let mode: RouterMode = "balanced";
-  if (hasTweak && !intent.revisePlan) mode = "speed";
+  if (hasTweak) mode = "speed";
   else if (domain === "cadConcept" || isRichBrief) mode = "quality";
 
-  const models = OPENAI[mode];
-  const needsPlanDomain =
-    domain === "cadConcept" ||
-    domain === "plan" ||
-    domain === "document" ||
-    domain === "visual";
-
-  const planFirst =
-    !intent.approve &&
-    needsPlanDomain &&
-    (intent.revisePlan || !hasTweak);
-
+  const preset = DEFAULTS[mode];
   return {
     mode,
     domain,
-    plannerModel: models.planner,
-    builderModel: models.builder,
-    criticModel: models.critic,
-    spiralLabel: spiralFor(domain, mode),
-    planFirst,
+    plannerModel: preset.planner,
+    builderModel: preset.builder,
+    criticModel: preset.critic,
+    spiralLabel: hasTweak ? "Refining quickly…" : SPIRAL_BY_DOMAIN[domain],
+    domainLabel: DOMAIN_LABEL[domain],
+    requiresSafetyNote: domain === "cadConcept",
   };
 }
